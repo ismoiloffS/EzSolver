@@ -7,6 +7,9 @@ POST /solve
   Body (JSON): {"sitekey": "...", "siteurl": "https://example.com"}
   Response:    {"token": "...", "elapsed": 4.23}
                {"error": "..."} on failure
+
+
+made by ismoiloff
 """
 
 import os
