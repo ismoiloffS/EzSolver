@@ -12,7 +12,7 @@ POST /solve
 made by ismoiloff
 """
 
-
+import json
 import os
 import platform
 import subprocess
@@ -21,10 +21,8 @@ import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 from typing import Optional
-import json
 
 from solver import solve
-
 
 PORT = int(os.environ.get("PORT", 8191))
 # How many Chrome instances to run in parallel.
@@ -41,20 +39,29 @@ _count_lock = threading.Lock()
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle each request in its own thread so solves don't block each other."""
+
     daemon_threads = True
 
 
 def _ensure_display() -> Optional[subprocess.Popen]:
-    """On Linux headless servers, start a virtual display so Chrome can run."""
+    """Start a virtual Xvfb display so Chrome runs invisibly.
+
+    Forces Chrome onto X11 via Xvfb even on Wayland desktops:
+    - Unsets WAYLAND_DISPLAY so Chrome can't connect to the compositor
+    - Sets DISPLAY to the virtual Xvfb server
+    """
     if platform.system() != "Linux":
         return None
-    if os.environ.get("DISPLAY"):
-        return None
+    # Kill any stale Xvfb on :99
+    subprocess.run(["pkill", "-f", "Xvfb :99"], stderr=subprocess.DEVNULL)
+    time.sleep(0.3)
     xvfb = subprocess.Popen(
         ["Xvfb", ":99", "-screen", "0", "1280x900x24"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+    # Force X11 — prevent Chrome from connecting to Wayland/Hyprland
+    os.environ.pop("WAYLAND_DISPLAY", None)
     os.environ["DISPLAY"] = ":99"
     time.sleep(0.5)
     print("[service] started Xvfb on :99")
@@ -99,8 +106,10 @@ class Handler(BaseHTTPRequestHandler):
 
         with _count_lock:
             _queued_count += 1
-        print(f"[service] queued — sitekey={sitekey!r} url={siteurl!r} "
-              f"(active={_active_count}/{MAX_WORKERS} queued={_queued_count})")
+        print(
+            f"[service] queued — sitekey={sitekey!r} url={siteurl!r} "
+            f"(active={_active_count}/{MAX_WORKERS} queued={_queued_count})"
+        )
 
         # Block until a worker slot is free — other threads keep running
         _worker_sem.acquire()
@@ -111,8 +120,10 @@ class Handler(BaseHTTPRequestHandler):
 
         t0 = time.time()
         try:
-            print(f"[service] solving sitekey={sitekey!r} url={siteurl!r} "
-                  f"(active={_active_count}/{MAX_WORKERS})")
+            print(
+                f"[service] solving sitekey={sitekey!r} url={siteurl!r} "
+                f"(active={_active_count}/{MAX_WORKERS})"
+            )
             token = solve(sitekey, siteurl, timeout=timeout)
             elapsed = round(time.time() - t0, 2)
             print(f"[service] solved in {elapsed}s  token={token[:20]}...")
@@ -129,12 +140,15 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/health":
             with _count_lock:
-                self.send_json(200, {
-                    "status": "ok",
-                    "workers": MAX_WORKERS,
-                    "active": _active_count,
-                    "queued": _queued_count,
-                })
+                self.send_json(
+                    200,
+                    {
+                        "status": "ok",
+                        "workers": MAX_WORKERS,
+                        "active": _active_count,
+                        "queued": _queued_count,
+                    },
+                )
         else:
             self.send_json(404, {"error": "use POST /solve"})
 
@@ -143,8 +157,10 @@ if __name__ == "__main__":
     xvfb_proc = _ensure_display()
     server = ThreadedHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"[service] Turnstile solver service running on http://0.0.0.0:{PORT}")
-    print(f"[service] worker pool: {MAX_WORKERS} concurrent Chrome instances "
-          f"(set MAX_WORKERS env var to change)")
+    print(
+        f"[service] worker pool: {MAX_WORKERS} concurrent Chrome instances "
+        f"(set MAX_WORKERS env var to change)"
+    )
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -73,6 +73,7 @@ async def _solve(sitekey: str, siteurl: str, timeout: int) -> str:
         browser_executable_path=_find_chrome(),
         headless=False,
         user_data_dir=_get_profile_dir(),
+        browser_args=["--ozone-platform=x11"],
     )
 
     try:
