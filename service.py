@@ -45,19 +45,27 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 def _ensure_display() -> Optional[subprocess.Popen]:
-    """On Linux headless servers, start a virtual display so Chrome can run."""
+    """Start a virtual Xvfb display so Chrome runs invisibly.
+
+    Forces Chrome onto X11 via Xvfb even on Wayland desktops:
+    - Unsets WAYLAND_DISPLAY so Chrome can't connect to the compositor
+    - Sets DISPLAY to the virtual Xvfb server
+    """
     if platform.system() != "Linux":
         return None
-    if os.environ.get("DISPLAY"):
-        return None
+    # Kill any stale Xvfb on :99
+    subprocess.run(["pkill", "-f", "Xvfb :99"], stderr=subprocess.DEVNULL)
+    time.sleep(0.3)
     xvfb = subprocess.Popen(
         ["Xvfb", ":99", "-screen", "0", "1280x900x24"],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
+    # Force X11 — prevent Chrome from connecting to Wayland/Hyprland
+    os.environ.pop("WAYLAND_DISPLAY", None)
     os.environ["DISPLAY"] = ":99"
     time.sleep(0.5)
-    print("[service] started Xvfb on :99")
+    print("[service] started Xvfb on :99 (Wayland disabled, Chrome renders offscreen)")
     return xvfb
 
 
