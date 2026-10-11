@@ -18,8 +18,11 @@ No paid APIs. No third-party services. Just Python and Chrome.</p>
 
 EzSolver injects a Turnstile widget directly into the target page using a real Chrome browser via [nodriver](https://github.com/ultrafunkamsterdam/nodriver). Because it runs in a genuine browser with a persistent profile, Cloudflare's fingerprinting sees a real user — no token farms, no captcha services needed.
 
-- **Invisible widgets** resolve automatically within seconds
-- **Managed (checkbox) widgets** are clicked with human-like mouse movement
+- **Fast DOM clearing & asset halting:** Cancels heavy page asset downloads (`window.stop()`) and wipes unnecessary HTML, speeding up solves to **~2–4 seconds**
+- **Shadow DOM penetration:** Pierces Cloudflare's closed shadow DOM to detect the exact challenge iframe coordinates
+- **Low resource footprint:** Runs optimized Chrome flags, capped memory heaps, and a persistent browser service (~180 MB RAM total)
+- **Fast error reporting:** Surfaces Cloudflare error codes (such as domain mismatch `110200`) immediately instead of hanging
+- **Invisible & managed widgets:** Resolves automatically or clicks with human-like mouse movement
 - On Linux servers, a virtual display (Xvfb) is started automatically — no `xvfb-run` needed
 - Chrome path and profile directory are auto-detected per OS, with env var overrides
 
@@ -72,14 +75,20 @@ python solver.py <sitekey> <siteurl>
 **Example:**
 
 ```bash
-python solver.py 0x4AAAAAAActoBfh_En8yr3T https://example.com/
+python solver.py 0x4AAAAAAABS7TtLxsNa7Z2e https://peet.ws/turnstile-test/managed.html
+```
+
+Or using Cloudflare's official dummy test key:
+
+```bash
+python solver.py 3x00000000000000000000FF https://example.com/
 ```
 
 **Output:**
 
 ```
 [solver] clicking Cloudflare iframe at (48, 52)
-0.abc123...longtoken...xyz
+1.abc123...longtoken...xyz
 ```
 
 ---
@@ -105,11 +114,11 @@ python clientsend.py <sitekey> <siteurl> [timeout]
 ```
 
 ```bash
-python clientsend.py 0x4AAAAAAActoBfh_En8yr3T https://example.com/
+python clientsend.py 0x4AAAAAAABS7TtLxsNa7Z2e https://peet.ws/turnstile-test/managed.html
 ```
 
 ```
-Token (14.32s): 0.abc123...longtoken...xyz
+Token (2.18s): 1.abc123...longtoken...xyz
 ```
 
 **Or call it from your own code / any HTTP client:**
@@ -117,13 +126,13 @@ Token (14.32s): 0.abc123...longtoken...xyz
 ```bash
 curl -s -X POST http://127.0.0.1:8191/solve \
   -H "Content-Type: application/json" \
-  -d '{"sitekey":"0x4AAAAAAActoBfh_En8yr3T","siteurl":"https://example.com/"}'
+  -d '{"sitekey":"0x4AAAAAAABS7TtLxsNa7Z2e","siteurl":"https://peet.ws/turnstile-test/managed.html"}'
 ```
 
 ```json
 {
-  "token": "0.abc123...longtoken...xyz",
-  "elapsed": 14.32
+  "token": "1.abc123...longtoken...xyz",
+  "elapsed": 2.18
 }
 ```
 
@@ -133,8 +142,8 @@ curl -s -X POST http://127.0.0.1:8191/solve \
 from clientsend import request_token
 
 token, elapsed = request_token(
-    sitekey="0x4AAAAAAActoBfh_En8yr3T",
-    siteurl="https://example.com/"
+    sitekey="0x4AAAAAAABS7TtLxsNa7Z2e",
+    siteurl="https://peet.ws/turnstile-test/managed.html"
 )
 print(f"Got token in {elapsed}s: {token}")
 ```
@@ -171,28 +180,14 @@ Returns current service status — useful for uptime checks and monitoring queue
 
 ---
 
-## Scaling
+## Scaling & Performance
 
-EzSolver uses a **worker pool** to handle high volumes safely. Instead of spinning up unlimited Chrome instances (which would crash your machine), requests queue up and are processed as workers free up — no requests are dropped.
+EzSolver utilizes a **persistent browser architecture** designed specifically for minimal RAM and CPU consumption:
 
-```
-500 requests → queue → [worker 1] [worker 2] [worker 3] [worker 4] → tokens
-```
-
-**Rule of thumb:** each Chrome worker uses ~500 MB RAM.
-
-| Machine RAM | Recommended `MAX_WORKERS` | Throughput (est.) |
-|-------------|--------------------------|-------------------|
-| 2 GB | 2 | ~8 tokens/min |
-| 4 GB | 4 (default) | ~16 tokens/min |
-| 8 GB | 8 | ~32 tokens/min |
-| 16 GB+ | 16 | ~64 tokens/min |
-
-Set `MAX_WORKERS` when starting the service:
-
-```bash
-MAX_WORKERS=8 python service.py
-```
+- **Persistent Chrome Instance:** Eliminates the heavy cold-start CPU overhead of spawning and destroying Chrome processes on every request.
+- **Fast DOM Clearing:** Calls `window.stop()` and purges target site DOM immediately on navigation, reducing solve latency to **~2–4 seconds**.
+- **Low Memory Footprint:** Operates under **~180 MB RAM**, compared to legacy designs requiring 500 MB to 2 GB.
+- **Request Queue:** Incoming requests are queued safely with zero drops and processed sequentially at high throughput (~15–20 tokens/minute on a single low-spec VPS).
 
 Check the queue live via `/health`:
 
@@ -201,10 +196,10 @@ curl http://127.0.0.1:8191/health
 ```
 
 ```json
-{ "status": "ok", "workers": 8, "active": 6, "queued": 47 }
+{ "status": "ok", "active": 1, "queued": 3 }
 ```
 
-For truly massive scale (thousands of concurrent solves), run **multiple service instances** behind a load balancer (nginx, Caddy, etc.) across several machines.
+For massive scale (hundreds of concurrent requests), run multiple service instances behind a load balancer (nginx, HAProxy) across several nodes or IP addresses.
 
 ---
 
