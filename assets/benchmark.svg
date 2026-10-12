@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1050" height="156" viewBox="0 0 1050 156" role="img" aria-labelledby="title desc">
+  <title id="title">EzSolver performance improvements</title>
+  <desc id="desc">Service latency: 9 times faster, 19.35 seconds to 2.13 to 2.18 seconds. RAM: about 91 percent less, 1.8 to 2.0 GB with 4 Chrome instances to 170 to 180 MB with one persistent Chrome instance.</desc>
+  <rect x="1" y="1" width="509" height="154" rx="12" fill="#090b0d" stroke="#30363d" stroke-width="1.5"/>
+  <rect x="526" y="1" width="523" height="154" rx="12" fill="#090b0d" stroke="#30363d" stroke-width="1.5"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="28" y="42" fill="#e6edf3" font-size="21">Service latency</text>
+    <text x="28" y="95" fill="#3be58b" font-size="35" font-weight="700">9× faster</text>
+    <text x="28" y="132" fill="#d1d9e0" font-size="20">19.35s  →  2.13–2.18s</text>
+    <text x="551" y="42" fill="#e6edf3" font-size="21">Service RAM</text>
+    <text x="551" y="95" fill="#3be58b" font-size="35" font-weight="700">~91% less</text>
+    <text x="551" y="132" fill="#d1d9e0" font-size="18">1.8–2.0 GB (4 Chrome)  →  170–180 MB (1)</text>
+  </g>
+</svg>
