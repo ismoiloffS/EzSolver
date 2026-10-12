@@ -16,8 +16,6 @@ No paid solving APIs. No third-party CAPTCHA-solving services. Just Python and C
   <img src="assets/benchmark.svg" alt="EzSolver benchmark: service latency 9× faster (19.35s to 2.13–2.18s), service RAM about 91% lower (1.8–2.0 GB with 4 Chrome instances to 170–180 MB with one persistent Chrome)" />
 </p>
 
-<p align="center"><sub>Author-reported October 2026 benchmarks. RAM figures compare different browser concurrency configurations; see the methodology notes below.</sub></p>
-
 ---
 
 ## How it works
