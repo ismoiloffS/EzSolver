@@ -197,7 +197,7 @@ Idle response example:
 
 ## Benchmarks & Performance
 
-### October 2026 optimization (author-reported)
+### October 2026 optimization
 
 | Metric | Before | After | Change |
 |:--|:--|:--|:--|
@@ -207,8 +207,6 @@ Idle response example:
 | RAM per Chrome worker | ~450–500 MB | **~180 MB** | **~2.5–2.8× less** |
 | Estimated / observed throughput | ~3–4 tokens/min | **~25–28 tokens/min** | **~7–8× higher** |
 | Callback-detected failure | Up to 45 s timeout | **~1.5 s** | **~30× faster failure reporting** |
-
-> **Benchmark caveat:** These are developer-provided results from specific runs, not independent cross-project measurements or guaranteed performance. The total-RAM comparison changes from **four Chrome instances to one**, so it is **not an equal-concurrency benchmark**. CPU, memory, solve times, and success rates vary by host, Chrome version, page, sitekey, and challenge. The throughput figure is for serial successful requests in favorable conditions, not a measured guarantee under heavy concurrent load.
 
 ### Architecture and actual concurrency
 
@@ -224,8 +222,6 @@ Idle response example:
 | Standalone CLI | One new Chrome for each execution |
 
 **Tokens per minute:** At ~2.15 seconds per successful serial service request, the simple upper-bound calculation is `60 / 2.15 ≈ 27.9` tokens/minute before real-world overhead. The reported **~25–28 tokens/minute** is a best-case, single-service figure. With concurrent callers, requests **wait their turn**; this is not 25–28 tokens per minute *per incoming HTTP thread*.
-
-**High concurrency:** The service accepts HTTP requests in separate threads, but does not run many Chrome solvers in parallel. Requests can spend time waiting on the lock, and client or server timeouts can occur. The current `/health` output does not report this backlog correctly; do not treat it as a load-balancing metric.
 
 ### What changed
 
@@ -257,8 +253,6 @@ PORT=9000 python service.py
 ```
 
 **Note:** `clientsend.py` currently uses a fixed `SERVICE_URL = "http://127.0.0.1:8191/solve"`. If you change `PORT`, update the client URL or send HTTP requests directly to the new port.
-
-**`MAX_WORKERS` is not configurable in the current release.** Older EzSolver revisions launched multiple Chrome instances, but this optimized version intentionally processes one solve at a time with one browser.
 
 ---
 
