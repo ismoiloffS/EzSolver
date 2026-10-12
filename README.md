@@ -3,7 +3,7 @@
 <h1>⚡ EzSolver</h1>
 
 <p><strong>Fast, cross-platform Cloudflare Turnstile solver powered by a real browser.</strong><br/>
-No paid APIs. No third-party services. Just Python and Chrome.</p>
+No paid solving APIs. No third-party CAPTCHA-solving services. Just Python and Chrome.</p>
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=flat-square&logo=python)](https://python.org)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey?style=flat-square)]()
@@ -247,7 +247,7 @@ These are the **actual supported environment variables** in the current code:
 | Environment variable | Default | Description |
 |:--|:--|:--|
 | `CHROME_PATH` | Auto-detected | Path to the Chrome / Chromium executable |
-| `TS_PROFILE_DIR` | `%TEMP%\\ts_profile` (Windows) or `/tmp/ts_profile` (Linux) | Reusable Chrome profile directory |
+| `TS_PROFILE_DIR` | `%TEMP%\ts_profile` (Windows) or `/tmp/ts_profile` (Linux) | Reusable Chrome profile directory |
 | `PORT` | `8191` | HTTP listen port used by `service.py` |
 
 Example:
