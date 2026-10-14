@@ -199,7 +199,26 @@ async def solve_on_page(page: uc.Tab, sitekey: str, siteurl: str, timeout: int =
         await asyncio.sleep(0.5)
         st = await get_state()
         if st.get("error"):
-            raise RuntimeError(f"Cloudflare Turnstile error {st['error']}")
+            error_code = str(st["error"])
+        
+            descriptions = {
+                "110100": "Invalid sitekey",
+                "110110": "Sitekey not found",
+                "110200": "Domain not authorized for this sitekey",
+                "110600": "Challenge timed out",
+                "110620": "Interaction timed out",
+                "200500": "Turnstile iframe failed to load",
+            }
+        
+            description = descriptions.get(
+                error_code,
+                "Unknown Turnstile error"
+            )
+        
+            raise RuntimeError(
+                f"Cloudflare Turnstile error {error_code}: "
+                f"{description}"
+            )
         if st.get("token"):
             return st["token"]
         rect = await get_cf_iframe_rect()
